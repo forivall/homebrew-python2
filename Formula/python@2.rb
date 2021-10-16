@@ -112,6 +112,16 @@ class PythonAT2 < Formula
       s.gsub! 'sqlite_defines.append(("SQLITE_OMIT_LOAD_EXTENSION", "1"))', ""
     end
 
+    # Added in to fix issue on macOS 11.6 and Python 2.7.18.
+    inreplace "setup.py" do |s|
+      s.gsub! "dep_target.split", "str(dep_target).split"
+    end
+
+    # Added in to fix issue on macOS 11.6 and Python 2.7.18.
+    inreplace "./Lib/distutils/spawn.py" do |s|
+      s.gsub! "_cfg_target.split", "str(_cfg_target).split"
+    end
+
     # Allow python modules to use ctypes.find_library to find homebrew's stuff
     # even if homebrew is not a /usr/local/lib. Try this with:
     # `brew install enchant && pip install pyenchant`
