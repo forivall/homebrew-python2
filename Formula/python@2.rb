@@ -22,6 +22,9 @@ class PythonAT2 < Formula
   depends_on "readline"
   depends_on "sqlite"
 
+  # # TODO: adapt https://github.com/Homebrew/formula-patches/blob/113aa842/python/3.8.3.patch
+  # patch File.read("#{__dir__}/ctypes-fix.patch")
+
   resource "setuptools" do
     url "https://files.pythonhosted.org/packages/f4/d5/a6c19dcbcbc267aca376558797f036d9bcdff344c9f785fe7d0fe9a5f2a7/setuptools-41.4.0.zip"
     sha256 "7eae782ccf36b790c21bde7d86a4f303a441cd77036b25c559a602cf5186ce4d"
@@ -91,6 +94,10 @@ class PythonAT2 < Formula
       cflags  << "-I#{MacOS.sdk_path}/System/Library/Frameworks/Tk.framework/Versions/8.5/Headers"
     end
 
+    # if `arch`.match(/^arm64\b/)
+    #   cflags << "-x86_64"
+    # end
+
     # Avoid linking to libgcc https://code.activestate.com/lists/python-dev/112195/
     args << "MACOSX_DEPLOYMENT_TARGET=#{MacOS.version}"
 
@@ -115,6 +122,19 @@ class PythonAT2 < Formula
     # Added in to fix issue on macOS 11.6 and Python 2.7.18.
     inreplace "setup.py" do |s|
       s.gsub! "dep_target.split", "str(dep_target).split"
+    end
+
+    inreplace "./configure" do |f|
+      f.gsub! /(i386\)(\s+)MACOSX_DEFAULT_ARCH)/,
+              "arm64)\\2MACOSX_DEFAULT_ARCH=\"arm64\"\\2;;\n    \t\\1"
+    end
+    inreplace "./configure.ac" do |f|
+      f.gsub! /(i386\)(\s+)MACOSX_DEFAULT_ARCH)/,
+              "arm64)\\2MACOSX_DEFAULT_ARCH=\"arm64\"\\2;;\n    \t\\1"
+    end
+    inreplace "./Mac/Tools/pythonw.c" do |f|
+      f.gsub! /(#elif defined\(__i386__\)(\s+)cpu_types\[0\] = CPU_TYPE_X86;)/,
+              "\\1\n#elif defined(__arm64__)\\2cpu_types[0] = CPU_TYPE_ARM64;"
     end
 
     # Added in to fix issue on macOS 11.6 and Python 2.7.18.
